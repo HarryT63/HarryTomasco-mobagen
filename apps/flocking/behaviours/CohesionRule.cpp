@@ -5,6 +5,11 @@ glm::vec2 CohesionRule::computeForce(const std::vector<BoidView>& neighborhood, 
 {
   glm::vec2 cohesionForce(0.0f);
 
+  // glm::length(vec) returns the length of a vector,
+  // glm::normalize(vec) returns the normalized vector (length 1) in the same direction as vec.
+
+  // begin solution
+
   size_t n = neighborhood.size();
   if (n == 0)
   {
@@ -21,17 +26,10 @@ glm::vec2 CohesionRule::computeForce(const std::vector<BoidView>& neighborhood, 
 
   glm::vec2 direction = centerOfMass - boid.position;
 
-  float length = glm::length(direction);
-  if (length > 0.0f)
+  if (glm::length(direction) > 0.0f)
   {
-    cohesionForce = direction / length;
+    cohesionForce = glm::normalize(direction);
   }
-
-  // glm::length(vec) returns the length of a vector,
-  // glm::normalize(vec) returns the normalized vector (length 1) in the same direction as vec.
-
-  // begin solution
-
 
   // end solution
 
