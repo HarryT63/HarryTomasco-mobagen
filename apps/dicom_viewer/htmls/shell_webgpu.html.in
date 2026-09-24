@@ -68,8 +68,7 @@
     </div>
 
     <script>
-        var Module = typeof Module !== "undefined" ? Module : {};
-        Module.canvas = document.getElementById('canvas');
+        var Module = { canvas: document.getElementById('canvas') };
 
         // ---- Performance stats ------------------------------------------------
         let frameCount = 0, lastTime = performance.now(), lastFpsTime = lastTime;

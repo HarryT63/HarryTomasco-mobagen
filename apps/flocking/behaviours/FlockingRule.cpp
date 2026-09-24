@@ -5,9 +5,9 @@
 
 FlockingRule::FlockingRule(const FlockingRule& toCopy) : weight(toCopy.weight), debugColor(toCopy.debugColor), isEnabled(toCopy.isEnabled) {}
 
-glm::vec2 FlockingRule::computeWeightedForce(const std::vector<BoidView>& boids, int selfIndex) {
+glm::vec2 FlockingRule::computeWeightedForce(const std::vector<BoidView>& neighborhood, const BoidView& boid) {
   if (isEnabled) {
-    return getBaseWeightMultiplier() * weight * computeForce(boids, selfIndex);
+    return getBaseWeightMultiplier() * weight * computeForce(neighborhood, boid);
   }
   return glm::vec2(0.f);
 }

@@ -15,8 +15,6 @@
 #include <atomic>
 #include <cassert>
 #include <coroutine>
-#include <cstdint>
-#include <limits>
 
 namespace jobs {
 
@@ -28,22 +26,9 @@ namespace jobs {
     WaitGroup(const WaitGroup&) = delete;
     WaitGroup& operator=(const WaitGroup&) = delete;
 
-    bool add(std::uint32_t n = 1) {
-      std::uint32_t current = count_.load(std::memory_order_relaxed);
-      do {
-        if (n > std::numeric_limits<std::uint32_t>::max() - current) return false;
-      } while (!count_.compare_exchange_weak(current, current + n, std::memory_order_relaxed));
-      return true;
-    }
-    bool bind(Scheduler* scheduler) {
-      if (scheduler == nullptr) return false;
-      Scheduler* expected = nullptr;
-      if (sched_.compare_exchange_strong(expected, scheduler, std::memory_order_release, std::memory_order_acquire)) {
-        return true;
-      }
-      return expected == scheduler;
-    }
-    bool done();  // scheduler.cpp (reschedules through the bound Scheduler)
+    void add(int n = 1) { count_.fetch_add(n, std::memory_order_relaxed); }
+    void bind(Scheduler* s) { sched_ = s; }
+    void done();  // scheduler.cpp (reschedules through the Scheduler)
     bool is_complete() const { return count_.load(std::memory_order_acquire) == 0; }
 
     struct Awaiter {
@@ -66,9 +51,9 @@ namespace jobs {
     Awaiter operator co_await() { return Awaiter{*this}; }
 
   private:
-    std::atomic<std::uint32_t> count_{0};
+    std::atomic<int> count_{0};
     std::atomic<void*> waiter_{nullptr};
-    std::atomic<Scheduler*> sched_{nullptr};
+    Scheduler* sched_ = nullptr;
   };
 
 }  // namespace jobs

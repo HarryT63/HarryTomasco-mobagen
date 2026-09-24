@@ -165,7 +165,8 @@ struct RmlApp : app::AppCallbacks {
     // its ImGui base has no device and init failure would kill the run.
     static app::RmlUiLayer rml_layer;
     rml = &rml_layer;
-    if (app.settings.render_mode != app::AppSettings::RenderMode::HeadlessNone) app.attach_gui(rml_layer);
+    if (app.settings.render_mode != app::AppSettings::RenderMode::HeadlessNone)
+      app.attach_gui(rml_layer);
     return SDL_APP_CONTINUE;
   }
 
@@ -177,7 +178,8 @@ struct RmlApp : app::AppCallbacks {
         app.request_exit();
         return SDL_APP_SUCCESS;
       }
-      if (e.key.key == SDLK_F8 && rml != nullptr && rml->context() != nullptr) Rml::Debugger::SetVisible(!Rml::Debugger::IsVisible());
+      if (e.key.key == SDLK_F8 && rml != nullptr && rml->context() != nullptr)
+        Rml::Debugger::SetVisible(!Rml::Debugger::IsVisible());
     }
     return SDL_APP_CONTINUE;
   }
