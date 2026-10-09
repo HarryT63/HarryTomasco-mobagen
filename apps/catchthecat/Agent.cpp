@@ -1,5 +1,7 @@
 #include "Agent.h"
+#include <algorithm>
 #include <climits>
+#include <cstdlib>
 #include <queue>
 #include <unordered_map>
 #include <unordered_set>
@@ -7,31 +9,66 @@
 
 using namespace std;
 
-std::vector<Point2D> Agent::generatePath(CatWorld* w) {
-  unordered_map<Point2D, Point2D> cameFrom;  // to build the flowfield and build the path
-  queue<Point2D> frontier;                   // to store next ones to visit
-  unordered_set<Point2D> frontierSet;        // OPTIMIZATION to check faster if a point is in the queue
-  unordered_map<Point2D, bool> visited;      // use .at() to get data, if the element dont exist [] will give you wrong results
+namespace {
+  struct Node {
+    Point2D pos;
+    int g;  // steps from the cat
+    int f;  // g + heuristic
 
-  // bootstrap state
-  auto catPos = w->getCat();
-  frontier.push(catPos);
-  frontierSet.insert(catPos);
-  Point2D borderExit = {INT32_MAX, INT32_MAX};  // sentinel: no border found yet
+    bool operator<(const Node& o) const { return f > o.f; }
+  };
+
+  bool inBounds(const Point2D& p, int half) { return abs(p.x) <= half && abs(p.y) <= half; }
+  bool isBorder(const Point2D& p, int half) { return abs(p.x) == half || abs(p.y) == half; }
+
+  int heuristic(const Point2D& p, int half) { return min(half - abs(p.x), half - abs(p.y)); }
+
+  vector<Point2D> neighbors(const Point2D& p) {
+    return {CatWorld::NE(p), CatWorld::NW(p), CatWorld::E(p),
+            CatWorld::W(p),  CatWorld::SW(p), CatWorld::SE(p)};
+  }
+}
+
+std::vector<Point2D> Agent::generatePath(CatWorld* w) {
+  const int half = w->getWorldSideSize() / 2;
+  const Point2D cat = w->getCat();
+
+  priority_queue<Node> frontier;
+  unordered_map<Point2D, Point2D> cameFrom;
+  unordered_map<Point2D, int> gScore;
+  unordered_set<Point2D> closed;
+
+  frontier.push({cat, 0, heuristic(cat, half)});
+  gScore[cat] = 0;
+  Point2D borderExit = {INT_MAX, INT_MAX};
 
   while (!frontier.empty()) {
-    // get the current from frontier
-    // remove the current from frontierset
-    // mark current as visited
-    // getVisitableNeightbors(world, current) returns a vector of neighbors that are not visited, not cat, not block, not in the queue
-    // iterate over the neighs:
-    // for every neighbor set the cameFrom
-    // enqueue the neighbors to frontier and frontierset
-    // do this up to find a visitable border and break the loop
+    Node cur = frontier.top();
+    frontier.pop();
+    if (closed.count(cur.pos)) continue;
+    closed.insert(cur.pos);
+
+    if (cur.pos != cat && isBorder(cur.pos, half)) {
+      borderExit = cur.pos;
+      break;
+    }
+
+    for (const Point2D& n : neighbors(cur.pos)) {
+      if (!inBounds(n, half) || closed.count(n) || w->getContent(n)) continue;
+
+      int g = cur.g + 1;
+      auto it = gScore.find(n);
+      if (it != gScore.end() && g >= it->second) continue;
+
+      gScore[n] = g;
+      cameFrom[n] = cur.pos;
+      frontier.push({n, g, g + heuristic(n, half)});
+    }
   }
 
-  // if the border is not infinity, build the path from border to the cat using the camefrom map
-  // if there isnt a reachable border, just return empty vector
-  // if your vector is filled from the border to the cat, the first element is the catcher move, and the last element is the cat move
-  return vector<Point2D>();
+  if (borderExit.x == INT_MAX) return {};
+
+  vector<Point2D> path;
+  for (Point2D p = borderExit; p != cat; p = cameFrom.at(p)) path.push_back(p);
+  return path;
 }

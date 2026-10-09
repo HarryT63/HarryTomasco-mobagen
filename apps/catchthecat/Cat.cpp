@@ -1,24 +1,17 @@
 #include "Cat.h"
+#include <cstdlib>
 #include "World.h"
-#include <stdexcept>
 
 Point2D Cat::Move(CatWorld* world) {
-  auto rand = Random::Range(0, 5);
-  auto pos = world->getCat();
-  switch (rand) {
-    case 0:
-      return CatWorld::NE(pos);
-    case 1:
-      return CatWorld::NW(pos);
-    case 2:
-      return CatWorld::E(pos);
-    case 3:
-      return CatWorld::W(pos);
-    case 4:
-      return CatWorld::SW(pos);
-    case 5:
-      return CatWorld::SE(pos);
-    default:
-      throw std::runtime_error("random out of range");
-  }
+  auto path = generatePath(world);
+  if (!path.empty()) return path.back();  // first step toward the closest exit
+
+  // No exit exists
+  const Point2D pos = world->getCat();
+  const int half = world->getWorldSideSize() / 2;
+  for (const Point2D& n : {CatWorld::NE(pos), CatWorld::NW(pos), CatWorld::E(pos),
+                           CatWorld::W(pos), CatWorld::SW(pos), CatWorld::SE(pos)}) {
+    if (abs(n.x) <= half && abs(n.y) <= half && !world->getContent(n)) return n;
+                           }
+  return pos;
 }
